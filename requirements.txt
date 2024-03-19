@@ -1,0 +1,9 @@
+matplotlib
+imageio
+numpy
+scipy
+sklearn
+skimage
+mrcfile
+napari
+tqdm
