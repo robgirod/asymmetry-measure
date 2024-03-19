@@ -6,6 +6,7 @@ grid search for random initialization and BFGS search of the local minima
 import matplotlib.pyplot as plt
 import imageio as iio
 import numpy as np
+import mrcfile
 from scipy.optimize import minimize
 from scipy.spatial.distance import directed_hausdorff
 from sklearn import decomposition
@@ -24,6 +25,18 @@ from scipy.ndimage import affine_transform
 
 
 # ----------------- BEGIN CODE ------------------
+
+def read_data(filename):
+
+    filename = repr(filename)[1:-1]
+
+    if filename.endswith('.tif') or filename.endswith('.tiff'):
+        return iio.volread(filename)
+    elif filename.endswith('.rec') or filename.endswith('.mrc'):
+        with mrcfile.open(filename, permissive = True) as mrc:
+            return np.roll(mrc.data, 1)
+    else:
+        raise ValueError('file format must be .rec, .mrc or .tif(f)')
 
 
 def split_equally(length, n_idx):
@@ -135,8 +148,8 @@ def show_result_BFGS(img, param_mirror, V = None):
     '''
     Method to display the original and optimized mirror
     '''
-    img_mirror = np.flip(img, axis = 1)
-    img_mirror = transform_3D(img_mirror, shifts = param_mirror[:3], angles = param_mirror[3:])
+    img_mirror = np.flip(img, axis = 0)
+    img_mirror_t = transform_3D(img_mirror, shifts = param_mirror[:3], angles = param_mirror[3:])
     center = np.array(img.shape) // 2
 
     if V:
@@ -147,6 +160,12 @@ def show_result_BFGS(img, param_mirror, V = None):
             rendering = 'iso'
             )
         V.add_image(img_mirror, 
+            colormap = 'RdPu', 
+            interpolation3d = 'nearest', 
+            blending = 'translucent',
+            rendering = 'iso'
+            )
+        V.add_image(img_mirror_t, 
             colormap = 'Oranges', 
             interpolation3d = 'nearest', 
             blending = 'translucent',

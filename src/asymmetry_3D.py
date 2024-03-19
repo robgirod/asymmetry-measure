@@ -200,7 +200,7 @@ def chirality_distance_3D(to_optimize, img, distance, step_rot = 0, step_transla
         u, v, w, a, b, c = to_optimize
     
     # Mirror image
-    img_mirror = np.flip(img, axis = 1)
+    img_mirror = np.flip(img, axis = 0)
 
     # Transform image by translation and rotation
     # This is what needs to be optimized
