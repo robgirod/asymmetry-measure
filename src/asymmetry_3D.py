@@ -89,7 +89,7 @@ def minimize_distance_local_3D(img, distance, init, step_rot = 2, step_translati
     # To try: if does not converge, try different scaling factors automatically
 
     print(f'minimization completed after {results.nit} iterations')
-    print(f'Best parameters: {[round(p, 2) for p in descale_parameters(*results.x, step_rot, step_translation)]} at {round(results.fun, 2)}')
+    print(f'Best parameters: {[round(p, 2) for p in descale_parameters(*results.x, step_rot, step_translation)]} at {round(results.fun, 3)}')
     print(results)
 
     return results

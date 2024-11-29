@@ -144,6 +144,28 @@ def transform_3D(img, shifts = (0, 0, 0), angles = (0, 0, 0)):
     
     return affine_transform(img, tform, order = 0, mode = 'constant')
 
+def save_result(img, param_mirror, filename):
+    '''
+    Method to save the mirror and translated volume giving the lowest asymmetry
+    '''
+    img_mirror = np.flip(img, axis = 0)
+    img_mirror_t = transform_3D(img_mirror, shifts = param_mirror[:3], angles = param_mirror[3:])
+
+    img = (img - np.min(img)) / np.max(img)
+    img_mirror_t = (img_mirror_t - np.min(img_mirror_t)) / np.max(img_mirror_t)
+
+    achiral = np.where(img + img_mirror_t == 2, 1, 0)
+    chiral = np.where(img + achiral == 1, 1, 0)
+
+    filename = repr(filename)[1:-1]
+
+    dot_index = filename.rfind('.')
+    savename = filename[:dot_index]
+
+    iio.volwrite(savename + '_achiral.tif', achiral.astype('uint8'))
+    iio.volwrite(savename + '_chiral.tif', chiral.astype('uint8'))
+
+
 def show_result_BFGS(img, param_mirror, V = None):
     '''
     Method to display the original and optimized mirror
