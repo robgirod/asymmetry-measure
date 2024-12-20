@@ -100,7 +100,7 @@ def test_step_size(img, distance, init, step_rot = 2, step_translation = 2):
     u, v, w are tested for 1 step_translation
     a, b, c are tested for 1 step_rotation
 
-    Best step size gives a change of ~1e-3 for SE, ~1.5-2e-2 for IoU
+    Best step size gives a change of ~1e-3 for DU, ~1.5-2e-2 for IoU
     It is best to have change_translate ~ change_rotation for convergence
     Note: cannot have step size < 1 px
     '''
@@ -211,9 +211,9 @@ def chirality_distance_3D(to_optimize, img, distance, step_rot = 0, step_transla
         return 1.0/IoU(img, img_mirror) # 1/IoU converges better than 1-IoU
     elif distance == 'Hausdorff':
         return round(hausdorff_distance_scipy(img, img_mirror), 6)
-    elif distance == 'SE':
-        return shape_error(img, img_mirror)
+    elif distance == 'DU':
+        return disjunctive_union(img, img_mirror)
     else:
-        raise ValueError('Distance must be IoU, SE or Hausdorff')
+        raise ValueError('Distance must be IoU, DU or Hausdorff')
 
 
