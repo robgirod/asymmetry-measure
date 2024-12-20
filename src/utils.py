@@ -45,7 +45,7 @@ def split_equally(length, n_idx):
     return [(i + 1) * chunk_size for i in range(n_idx)]
 
 
-def shape_error(img1, img2):
+def disjunctive_union(img1, img2):
 
     img1 = np.asarray(img1, dtype = bool)
     img2 = np.asarray(img2, dtype = bool)
