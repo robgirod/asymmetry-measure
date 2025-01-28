@@ -69,6 +69,7 @@ def minimize_distance_local_3D(img, distance, init, step_rot = 2, step_translati
 
     init_scaled = scale_parameters(*init, step_rot, step_translation)
 
+    ''' Other solvers
     results = minimize(chirality_distance_3D, 
                     x0 = init_scaled, 
                     args = (img, distance, step_rot, step_translation), 
@@ -80,11 +81,30 @@ def minimize_distance_local_3D(img, distance, init, step_rot = 2, step_translati
                               (0.9982,1.0018),
                               (0.9982,1.0018)], #Need to bound to make sure there's an overlap for IoU calculation
                     jac = None,
+                    callback = callback,
                     options = {
                         'disp':0,
                         'gtol':1e-4,
                         'ftol':1e-4,
                         'eps':1e-5})
+    
+    results = minimize(chirality_distance_3D, 
+                x0 = init_scaled, 
+                args = (img, distance, step_rot, step_translation), 
+                method = 'BFGS',
+                jac = None,
+                callback = callback,
+                options = {
+                    'disp':0,
+                    'gtol':1,
+                    'eps': 1e-5})
+    '''
+    results = minimize(chirality_distance_3D, 
+                x0 = init_scaled, 
+                args = (img, distance, step_rot, step_translation), 
+                method = 'Nelder-Mead',
+                jac = None,
+                callback = callback)
     
     # To try: if does not converge, try different scaling factors automatically
 
@@ -93,6 +113,9 @@ def minimize_distance_local_3D(img, distance, init, step_rot = 2, step_translati
     print(results)
 
     return results
+
+def callback(intermediate_result):
+    print(f'evaluation: {intermediate_result.fun:.4f}')
 
 def test_step_size(img, distance, init, step_rot = 2, step_translation = 2):
     '''

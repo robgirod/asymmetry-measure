@@ -11,12 +11,12 @@ from scipy.optimize import minimize
 from scipy.spatial.distance import directed_hausdorff
 from sklearn import decomposition
 from skimage import registration
-from skimage.transform import warp, downscale_local_mean, EuclideanTransform, rotate
+from skimage.transform import warp, downscale_local_mean, EuclideanTransform, rotate, rescale
 from skimage import img_as_float32
 from skimage.exposure import rescale_intensity
 import mrcfile
 from skimage.metrics import hausdorff_distance, hausdorff_pair
-from skimage.filters import threshold_otsu, sobel
+from skimage.filters import threshold_otsu, sobel, median
 from skimage.draw import line_nd, ellipse, polygon
 from tqdm import tqdm
 from itertools import product
@@ -25,6 +25,94 @@ from scipy.ndimage import affine_transform
 
 
 # ----------------- BEGIN CODE ------------------
+def plot_histogram(vol):
+    
+    vol = crop_percentile_intensity(vol)
+
+    x, y, z = np.shape(vol)
+    n = np.floor(x/2).astype('int')
+    
+    # Plot
+    fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(8, 2.5))
+
+    # Plotting the original image.
+    ax[0].imshow(vol[n], cmap='gray')
+    ax[0].set_title('Original')
+    ax[0].axis('off')
+
+    # Plotting the histogram and the two thresholds obtained
+    h, b, p = ax[1].hist(vol[vol>0].ravel(), bins=255)
+    ax[1].set_title('Histogram')
+    ax[1].set_yticks([])
+    ax[1].set_yscale('log')
+    #ax[1].set_ylim(0, max_y)
+
+    plt.show()
+
+def crop_percentile_intensity(vol):
+
+    vol = vol-np.min(vol[vol > 0])
+    vol = vol / np.max(vol)
+
+    p1 = np.percentile(vol, 2)
+
+    return np.where(vol < p1, 0, vol)
+
+def prepare_volume(vol, thresh, footprint = None, binning = None, V = None):
+
+    if binning: vol = downscale_local_mean(vol, binning)
+
+    vol = crop_percentile_intensity(vol)
+
+    x, y, z = np.shape(vol)
+    n = np.floor(x/2).astype('int')
+
+    # Threshold
+    if thresh == 'otsu':
+        thresh = threshold_otsu(vol)
+    
+    binarized = vol > thresh
+    binarized = binarized.astype(int) * 255
+
+    # Median
+    if footprint:
+        dim = 2 * footprint + 1
+        binarized = median(binarized, footprint = np.ones((dim, dim, dim)))
+
+    # Plot
+    fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(9, 3.5))
+
+    # Plotting the original image.
+    ax[0].imshow(vol[n], cmap='gray')
+    ax[0].set_title('Original')
+    ax[0].axis('off')
+
+    # Plotting the histogram and the two thresholds obtained
+    h, b, p = ax[1].hist(vol[vol>0].ravel(), bins=255)
+    max_y = np.max(h[b[:-1] > thresh]) * 2
+    ax[1].set_title('Histogram')
+    ax[1].axvline(thresh, color='r')
+    ax[1].set_yticks([])
+    ax[1].set_ylim(0, max_y)
+
+    # Plotting the threshold result.
+    ax[2].imshow(binarized[n], cmap = 'gray')
+    ax[2].set_title('Binarized')
+    ax[2].axis('off')
+
+    plt.subplots_adjust()
+    plt.show()
+
+    if V:
+        V.add_image(binarized,
+            colormap = 'gray', 
+            interpolation3d = 'linear', 
+            blending = 'translucent',
+            rendering = 'iso',
+            iso_threshold = 0
+            )
+
+    return binarized
 
 def read_data(filename):
 
@@ -195,13 +283,19 @@ def show_result_BFGS(img, param_mirror, V = None):
             )
         
     else:
-        plt.figure(figsize = (10,4))
-        plt.subplot(1,3,1)
+        fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(10, 4))
+
         r = np.zeros_like(img[center[0],...], dtype = 'int8')
-        plt.imshow(np.dstack((img[center[0],...], img_mirror[center[0],...], r)))
-        plt.subplot(1,3,2)
+        ax[0].imshow(np.dstack((img[center[0],...], img_mirror[center[0],...], r)))
+        ax[0].set_title('Original')
+        ax[0].axis('off')
+
         r = np.zeros_like(img[:,center[1],:], dtype = 'int8')
-        plt.imshow(np.dstack((img[:,center[1],:], img_mirror[:,center[1],:], r)))
-        plt.subplot(1,3,3)
+        ax[1].imshow(np.dstack((img[:,center[1],:], img_mirror[:,center[1],:], r)))
+        ax[1].set_title('Mirror')
+        ax[1].axis('off')
+
         r = np.zeros_like(img[...,center[2]], dtype = 'int8')
-        plt.imshow(np.dstack((img[...,center[2]], img_mirror[...,center[2]], r)))
+        ax[2].imshow(np.dstack((img[...,center[2]], img_mirror[...,center[2]], r)))
+        ax[2].set_title('Optimized')
+        ax[2].axis('off')
