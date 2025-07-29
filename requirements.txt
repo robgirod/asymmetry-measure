@@ -1,3 +1,5 @@
+For asymmetry_3D:
+
 matplotlib
 imageio
 numpy
@@ -7,3 +9,9 @@ skimage
 mrcfile
 napari
 tqdm
+
+For visualize_distance:
+Matlab > 2024a
+Image Processing Toolbox
+Lidar Toolbox
+Statistics and ML Toolbox

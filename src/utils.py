@@ -9,6 +9,7 @@ import numpy as np
 import mrcfile
 from scipy.optimize import minimize
 from scipy.spatial.distance import directed_hausdorff
+from scipy.spatial import cKDTree
 from sklearn import decomposition
 from skimage import registration
 from skimage.transform import warp, downscale_local_mean, EuclideanTransform, rotate, rescale
@@ -18,7 +19,7 @@ import mrcfile
 from skimage.metrics import hausdorff_distance, hausdorff_pair
 from skimage.filters import threshold_otsu, sobel, median
 from skimage.draw import line_nd, ellipse, polygon
-from tqdm import tqdm
+from tqdm import tqdm, trange
 from itertools import product
 import math
 from scipy.ndimage import affine_transform
@@ -65,7 +66,9 @@ def prepare_volume(vol, thresh, footprint = None, binning = None, V = None):
     vol = crop_percentile_intensity(vol)
 
     x, y, z = np.shape(vol)
-    n = np.floor(x/2).astype('int')
+    nx = np.floor(x/2).astype('int')
+    ny = np.floor(y/2).astype('int')
+    nz = np.floor(z/2).astype('int')
 
     # Threshold
     if thresh == 'otsu':
@@ -80,25 +83,35 @@ def prepare_volume(vol, thresh, footprint = None, binning = None, V = None):
         binarized = median(binarized, footprint = np.ones((dim, dim, dim)))
 
     # Plot
-    fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(9, 3.5))
+    fig, ax = plt.subplots(nrows=1, ncols=5, figsize=(20, 3.5))
 
-    # Plotting the original image.
-    ax[0].imshow(vol[n], cmap='gray')
-    ax[0].set_title('Original')
+    # Plotting the original image xy.
+    ax[0].imshow(vol[nx], cmap='gray')
+    ax[0].set_title('Original xy')
     ax[0].axis('off')
 
-    # Plotting the histogram and the two thresholds obtained
-    h, b, p = ax[1].hist(vol[vol>0].ravel(), bins=255)
-    max_y = np.max(h[b[:-1] > thresh]) * 2
-    ax[1].set_title('Histogram')
-    ax[1].axvline(thresh, color='r')
-    ax[1].set_yticks([])
-    ax[1].set_ylim(0, max_y)
+    # Plotting the original image xz.
+    ax[1].imshow(np.rot90(vol[..., nz]), cmap='gray')
+    ax[1].set_title('Original xz') 
+    ax[1].axis('off')
 
-    # Plotting the threshold result.
-    ax[2].imshow(binarized[n], cmap = 'gray')
-    ax[2].set_title('Binarized')
-    ax[2].axis('off')
+    # Plotting the histogram and the two thresholds obtained
+    h, b, p = ax[2].hist(vol[vol>0].ravel(), bins=255)
+    max_y = np.max(h[b[:-1] > thresh]) * 2
+    ax[2].set_title('Histogram')
+    ax[2].axvline(thresh, color='r')
+    ax[2].set_yticks([])
+    ax[2].set_ylim(0, max_y)
+
+    # Plotting the threshold result xy.
+    ax[3].imshow(binarized[nx], cmap = 'gray')
+    ax[3].set_title('Binarized xy')
+    ax[3].axis('off')
+
+    # Plotting the threshold result xz.
+    ax[4].imshow(np.rot90(binarized[..., nz]), cmap = 'gray')
+    ax[4].set_title('Binarized xz')
+    ax[4].axis('off')
 
     plt.subplots_adjust()
     plt.show()
@@ -252,6 +265,27 @@ def save_result(img, param_mirror, filename):
 
     iio.volwrite(savename + '_achiral.tif', achiral.astype('uint8'))
     iio.volwrite(savename + '_chiral.tif', chiral.astype('uint8'))
+
+def visualize_distance(img, param_mirror):
+    '''
+    Method to calculate the distance between each surface points of the 
+    images the closest surface of the optimized mirror image
+    '''
+
+    img_mirror = np.flip(img, axis = 0)
+    img_mirror_t = transform_3D(img_mirror, shifts = param_mirror[:3], angles = param_mirror[3:])
+
+    print('Getting surface coordinates ...')
+    coords = np.array(np.nonzero(get_edges(img))).T
+    coords_m = np.array(np.nonzero(get_edges(img_mirror_t))).T
+
+    print('Building KDTree ...')    
+    tree = cKDTree(coords_m)
+
+    print('Computing nearest neighbour distances ...')    
+    distances, _ = tree.query(coords)
+
+    return coords, distances
 
 
 def show_result_BFGS(img, param_mirror, V = None):

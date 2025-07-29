@@ -45,7 +45,10 @@ z = z-mean(z);
 data = [x y z];
 
 %% PCA
+fprintf('Finding the axes with PCA ... ')
 [coeff, score, latent] = pca(data, 'NumComponents', 3);
+fprintf('Done\n')
+
 
 if plot
     scatter3(x, y, z);
@@ -66,6 +69,8 @@ end
 % im_rot = imrotate(im, -theta, "crop");
 % imshow(im_rot);
 
+fprintf('Rotating ... ')
+
 R = circshift(coeff', 2, 1); %roll axis 1 (row) to position PC1 on row 3 and align PC1 to z
 
 if single(det(R)) == -1.0, R = [R(2,:); R(1,:); R(3,:)]; end % if det(R) is -1 instead of 1, need to invert rows of PC2 and PC3 
@@ -74,3 +79,6 @@ tform = rigidtform3d(R,transl);
 CenterOutput = affineOutputView(size(im),tform,"BoundsStyle","CenterOutput"); % we assume there is enough black around the particle to allow for croping after the rotation
 
 aligned_reconstruction = imwarp(reconstruction, tform, "cubic", "OutputView", CenterOutput);
+
+fprintf('Done\n')
+

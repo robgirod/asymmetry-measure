@@ -104,7 +104,9 @@ def minimize_distance_local_3D(img, distance, init, step_rot = 2, step_translati
                 args = (img, distance, step_rot, step_translation), 
                 method = 'Nelder-Mead',
                 jac = None,
-                callback = callback)
+                callback = callback,
+                options = {
+                    'adaptive':True})
     
     # To try: if does not converge, try different scaling factors automatically
 
@@ -238,5 +240,4 @@ def chirality_distance_3D(to_optimize, img, distance, step_rot = 0, step_transla
         return disjunctive_union(img, img_mirror)
     else:
         raise ValueError('Distance must be IoU, DU or Hausdorff')
-
 
