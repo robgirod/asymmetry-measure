@@ -1,10 +1,6 @@
 """
 Functions to calculate the Hausdorff chirality measure with a combination of
 grid search for random initialization and BFGS search of the local minima
-
-TO-DO:
-- Method to get bounds for BFGS
-- Method to put the grid search here
 """
 
 import matplotlib.pyplot as plt
@@ -69,7 +65,15 @@ def minimize_distance_local_3D(img, distance, init, step_rot = 2, step_translati
 
     init_scaled = scale_parameters(*init, step_rot, step_translation)
 
-    ''' Other solvers
+    results = minimize(chirality_distance_3D, 
+                x0 = init_scaled, 
+                args = (img, distance, step_rot, step_translation), 
+                method = 'Nelder-Mead',
+                jac = None,
+                callback = callback,
+                options = {
+                    'adaptive':True})
+    
     ''' Other solvers
     results = minimize(chirality_distance_3D, 
                     x0 = init_scaled, 
@@ -101,19 +105,10 @@ def minimize_distance_local_3D(img, distance, init, step_rot = 2, step_translati
                     'gtol':1,
                     'eps': 1e-5})
     '''
-    results = minimize(chirality_distance_3D, 
-                x0 = init_scaled, 
-                args = (img, distance, step_rot, step_translation), 
-                method = 'Nelder-Mead',
-                jac = None,
-                callback = callback,
-                options = {
-                    'adaptive':True})
-    
+
     # To try: if does not converge, try different scaling factors automatically
 
     print(f'minimization completed after {results.nit} iterations')
-    print(f'Best parameters: {[round(p, 2) for p in descale_parameters(*results.x, step_rot, step_translation)]} at {round(results.fun, 3)}')
     print(f'Best parameters: {[round(p, 2) for p in descale_parameters(*results.x, step_rot, step_translation)]} at {round(results.fun, 3)}')
     print(results)
 
@@ -224,7 +219,6 @@ def chirality_distance_3D(to_optimize, img, distance, step_rot = 0, step_transla
     If called from minimize_hausdorff_local_3D, to_optimize is scaled to 1e-5 steps
     If called from to_multiprocessing_3D, to_optimized is in px and °
     '''
-
 
     if step_rot or step_translation:
         u, v, w, a, b, c = descale_parameters(*to_optimize, step_rot, step_translation)

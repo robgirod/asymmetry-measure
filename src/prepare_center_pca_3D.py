@@ -3,7 +3,6 @@ Functions to prepare a 2D image for Hausdorff chirality calculation
 
 center to center of mass
 align axes with PCA
-
 """
 
 from skimage import registration
@@ -23,6 +22,12 @@ from scipy.ndimage import affine_transform
 # ----------------- BEGIN CODE ------------------
 
 def translate_center_of_mass(img):
+    '''
+    Parameters:
+    img: 3D numpy array
+    Returns:
+    img: 3D numpy array, translated to center
+    '''
     
     # First get the edges to speed up
     edges = sobel(img)
@@ -43,6 +48,15 @@ def translate_center_of_mass(img):
     return affine_transform(img, tform, order = 0, mode = 'constant')
 
 def rotate_pca(img):
+    '''
+    Function to rotate the image so that the major axis is vertical.
+    The volume is also cropped to the particle + 5% of background on each side.
+
+    Parameters:
+    img: 3D numpy array
+    Returns:
+    img: 3D numpy array, rotated to align major axis with z-axis
+    '''
     
     # Pad array to ensure we don't remove parts of the particle
     # We add 25% of the longer side
@@ -65,7 +79,7 @@ def rotate_pca(img):
     # Compute PCA to get major axes of the particle
     pca = decomposition.PCA(n_components = 3)
     pca.fit(ZYX)
-    rot = pca.components_ # Retrieves the rotation matrix, this will work for the major axis on 0
+    rot = pca.components_ # Retrieves the rotation matrix, /!\ this will work for the major axis on 0
 
     # Find center
     center = np.array(img.shape) // 2

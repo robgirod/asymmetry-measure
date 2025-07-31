@@ -63,6 +63,19 @@ def crop_percentile_intensity(vol):
     return np.where(vol < p1, 0, vol)
 
 def prepare_volume(vol, thresh, footprint = None, binning = None, V = None):
+    '''
+    Method to prepare the volume for the asymmetry calculation
+    Depending on the paramters, it will apply a threshold, median filter and binning
+    
+    Parameters:
+    vol             3D numpy array
+    thresh          float or 'otsu' for automatic thresholding
+    footprint       int, size of the median filter footprint
+    V               napari viewer object, if None no visualization is done
+
+    Returns:
+    binarized       3D numpy array, binarized and processed image
+    '''
 
     if binning: vol = downscale_local_mean(vol, binning)
 
@@ -150,7 +163,6 @@ def split_equally(length, n_idx):
 
 
 def disjunctive_union(img1, img2):
-def disjunctive_union(img1, img2):
 
     img1 = np.asarray(img1, dtype = bool)
     img2 = np.asarray(img2, dtype = bool)
@@ -179,7 +191,7 @@ def IoU(img1, img2):
 
 def make_contour(to_plot, k, l):
     """
-    reorganize results from grid search for plotting in a contour plot
+    reorganizes the results from grid search for plotting in a contour plot
 
     Variables:
     to_plot         2D array [idx, u, v, alpha, distance]
@@ -292,12 +304,10 @@ def visualize_distance(img, param_mirror):
     return coords, distances
 
 
-def show_result_BFGS(img, param_mirror, V = None):
+def show_results(img, param_mirror, V = None):
     '''
     Method to display the original and optimized mirror
     '''
-    img_mirror = np.flip(img, axis = 0)
-    img_mirror_t = transform_3D(img_mirror, shifts = param_mirror[:3], angles = param_mirror[3:])
     img_mirror = np.flip(img, axis = 0)
     img_mirror_t = transform_3D(img_mirror, shifts = param_mirror[:3], angles = param_mirror[3:])
     center = np.array(img.shape) // 2
@@ -316,12 +326,6 @@ def show_result_BFGS(img, param_mirror, V = None):
             rendering = 'iso'
             )
         V.add_image(img_mirror_t, 
-            colormap = 'RdPu', 
-            interpolation3d = 'nearest', 
-            blending = 'translucent',
-            rendering = 'iso'
-            )
-        V.add_image(img_mirror_t, 
             colormap = 'Oranges', 
             interpolation3d = 'nearest', 
             blending = 'translucent',
@@ -331,30 +335,18 @@ def show_result_BFGS(img, param_mirror, V = None):
     else:
         fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(10, 4))
 
-        fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(10, 4))
-
         r = np.zeros_like(img[center[0],...], dtype = 'int8')
         ax[0].imshow(np.dstack((img[center[0],...], img_mirror[center[0],...], r)))
         ax[0].set_title('Original')
         ax[0].axis('off')
 
-        ax[0].imshow(np.dstack((img[center[0],...], img_mirror[center[0],...], r)))
-        ax[0].set_title('Original')
-        ax[0].axis('off')
 
         r = np.zeros_like(img[:,center[1],:], dtype = 'int8')
         ax[1].imshow(np.dstack((img[:,center[1],:], img_mirror[:,center[1],:], r)))
         ax[1].set_title('Mirror')
         ax[1].axis('off')
 
-        ax[1].imshow(np.dstack((img[:,center[1],:], img_mirror[:,center[1],:], r)))
-        ax[1].set_title('Mirror')
-        ax[1].axis('off')
-
         r = np.zeros_like(img[...,center[2]], dtype = 'int8')
-        ax[2].imshow(np.dstack((img[...,center[2]], img_mirror[...,center[2]], r)))
-        ax[2].set_title('Optimized')
-        ax[2].axis('off')
         ax[2].imshow(np.dstack((img[...,center[2]], img_mirror[...,center[2]], r)))
         ax[2].set_title('Optimized')
         ax[2].axis('off')
