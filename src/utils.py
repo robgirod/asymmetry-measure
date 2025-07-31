@@ -7,16 +7,19 @@ import matplotlib.pyplot as plt
 import imageio as iio
 import numpy as np
 import mrcfile
+import mrcfile
 from scipy.optimize import minimize
 from scipy.spatial.distance import directed_hausdorff
 from scipy.spatial import cKDTree
 from sklearn import decomposition
 from skimage import registration
 from skimage.transform import warp, downscale_local_mean, EuclideanTransform, rotate, rescale
+from skimage.transform import warp, downscale_local_mean, EuclideanTransform, rotate, rescale
 from skimage import img_as_float32
 from skimage.exposure import rescale_intensity
 import mrcfile
 from skimage.metrics import hausdorff_distance, hausdorff_pair
+from skimage.filters import threshold_otsu, sobel, median
 from skimage.filters import threshold_otsu, sobel, median
 from skimage.draw import line_nd, ellipse, polygon
 from tqdm import tqdm, trange
@@ -146,6 +149,7 @@ def split_equally(length, n_idx):
     return [(i + 1) * chunk_size for i in range(n_idx)]
 
 
+def disjunctive_union(img1, img2):
 def disjunctive_union(img1, img2):
 
     img1 = np.asarray(img1, dtype = bool)
@@ -294,6 +298,8 @@ def show_result_BFGS(img, param_mirror, V = None):
     '''
     img_mirror = np.flip(img, axis = 0)
     img_mirror_t = transform_3D(img_mirror, shifts = param_mirror[:3], angles = param_mirror[3:])
+    img_mirror = np.flip(img, axis = 0)
+    img_mirror_t = transform_3D(img_mirror, shifts = param_mirror[:3], angles = param_mirror[3:])
     center = np.array(img.shape) // 2
 
     if V:
@@ -310,6 +316,12 @@ def show_result_BFGS(img, param_mirror, V = None):
             rendering = 'iso'
             )
         V.add_image(img_mirror_t, 
+            colormap = 'RdPu', 
+            interpolation3d = 'nearest', 
+            blending = 'translucent',
+            rendering = 'iso'
+            )
+        V.add_image(img_mirror_t, 
             colormap = 'Oranges', 
             interpolation3d = 'nearest', 
             blending = 'translucent',
@@ -319,7 +331,13 @@ def show_result_BFGS(img, param_mirror, V = None):
     else:
         fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(10, 4))
 
+        fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(10, 4))
+
         r = np.zeros_like(img[center[0],...], dtype = 'int8')
+        ax[0].imshow(np.dstack((img[center[0],...], img_mirror[center[0],...], r)))
+        ax[0].set_title('Original')
+        ax[0].axis('off')
+
         ax[0].imshow(np.dstack((img[center[0],...], img_mirror[center[0],...], r)))
         ax[0].set_title('Original')
         ax[0].axis('off')
@@ -329,7 +347,14 @@ def show_result_BFGS(img, param_mirror, V = None):
         ax[1].set_title('Mirror')
         ax[1].axis('off')
 
+        ax[1].imshow(np.dstack((img[:,center[1],:], img_mirror[:,center[1],:], r)))
+        ax[1].set_title('Mirror')
+        ax[1].axis('off')
+
         r = np.zeros_like(img[...,center[2]], dtype = 'int8')
+        ax[2].imshow(np.dstack((img[...,center[2]], img_mirror[...,center[2]], r)))
+        ax[2].set_title('Optimized')
+        ax[2].axis('off')
         ax[2].imshow(np.dstack((img[...,center[2]], img_mirror[...,center[2]], r)))
         ax[2].set_title('Optimized')
         ax[2].axis('off')

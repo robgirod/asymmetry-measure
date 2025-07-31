@@ -70,6 +70,7 @@ def minimize_distance_local_3D(img, distance, init, step_rot = 2, step_translati
     init_scaled = scale_parameters(*init, step_rot, step_translation)
 
     ''' Other solvers
+    ''' Other solvers
     results = minimize(chirality_distance_3D, 
                     x0 = init_scaled, 
                     args = (img, distance, step_rot, step_translation), 
@@ -81,6 +82,7 @@ def minimize_distance_local_3D(img, distance, init, step_rot = 2, step_translati
                               (0.9982,1.0018),
                               (0.9982,1.0018)], #Need to bound to make sure there's an overlap for IoU calculation
                     jac = None,
+                    callback = callback,
                     callback = callback,
                     options = {
                         'disp':0,
@@ -112,9 +114,13 @@ def minimize_distance_local_3D(img, distance, init, step_rot = 2, step_translati
 
     print(f'minimization completed after {results.nit} iterations')
     print(f'Best parameters: {[round(p, 2) for p in descale_parameters(*results.x, step_rot, step_translation)]} at {round(results.fun, 3)}')
+    print(f'Best parameters: {[round(p, 2) for p in descale_parameters(*results.x, step_rot, step_translation)]} at {round(results.fun, 3)}')
     print(results)
 
     return results
+
+def callback(intermediate_result):
+    print(f'evaluation: {intermediate_result.fun:.4f}')
 
 def callback(intermediate_result):
     print(f'evaluation: {intermediate_result.fun:.4f}')
@@ -125,6 +131,7 @@ def test_step_size(img, distance, init, step_rot = 2, step_translation = 2):
     u, v, w are tested for 1 step_translation
     a, b, c are tested for 1 step_rotation
 
+    Best step size gives a change of ~1e-3 for DU, ~1.5-2e-2 for IoU
     Best step size gives a change of ~1e-3 for DU, ~1.5-2e-2 for IoU
     It is best to have change_translate ~ change_rotation for convergence
     Note: cannot have step size < 1 px
@@ -226,6 +233,7 @@ def chirality_distance_3D(to_optimize, img, distance, step_rot = 0, step_transla
     
     # Mirror image
     img_mirror = np.flip(img, axis = 0)
+    img_mirror = np.flip(img, axis = 0)
 
     # Transform image by translation and rotation
     # This is what needs to be optimized
@@ -236,6 +244,8 @@ def chirality_distance_3D(to_optimize, img, distance, step_rot = 0, step_transla
         return 1.0/IoU(img, img_mirror) # 1/IoU converges better than 1-IoU
     elif distance == 'Hausdorff':
         return round(hausdorff_distance_scipy(img, img_mirror), 6)
+    elif distance == 'DU':
+        return disjunctive_union(img, img_mirror)
     elif distance == 'DU':
         return disjunctive_union(img, img_mirror)
     else:
