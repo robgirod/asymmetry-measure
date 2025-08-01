@@ -1,4 +1,4 @@
-Tools to compute an asymmetry measure using an overlap-based measure (the disjunctive union) or the Hausdorff distance from electron tomography reconstruction - or any voxel-based object. The code can be run from the notebook "asymmetry_3D.ipynb".
+Tools to compute an asymmetry measure using an overlap-based metric (the disjunctive union) or the Hausdorff distance from electron tomography reconstruction - or any voxel-based object. The code can be run from the notebook "asymmetry_3D.ipynb".
 
 If using code or routines from this repository, please cite
 - Ha, I. H.\*; Van Gordon, K.\*; Girod, R.\*; Han, J. H.; Vlasov, E.; Baulde, S.; Mosquera, J.; Nam, K. T.; Bals, S.; Liz-Marzán, L. M. Chiroptical Control of Gold Nanoparticle Growth through Combination of a Multimodal Chirality Inducer and Surfactant Counter-Ion. ACS Nano 2025. https://doi.org/10.1021/acsnano.5c07744.
